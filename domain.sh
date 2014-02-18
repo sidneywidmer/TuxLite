@@ -388,6 +388,18 @@ function awstats_on {
 
 } # End function awstats_on
 
+function add_database {
+    # unique db user -> replace . in domain with _
+    DB_USER=${DOMAIN//\./\_}
+    # generate random password for this user
+    DB_PASSWORD=$(cat /dev/urandom | tr -dc A-Za-z0-9 | fold -w10 | head -n1)
+
+    mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "create database $DB_USER; GRANT ALL PRIVILEGES ON $DB_USER.* TO $DB_USER@localhost IDENTIFIED BY '$DB_PASSWORD'"
+} # End function add_database
+
+function remove_database {
+
+} # End function remove_database
 
 function awstats_off {
 
@@ -504,6 +516,7 @@ add)
     fi
 
     add_domain
+    add_database
     php_fpm_add_user
     reload_webserver
     echo -e "\033[35;1mSuccesfully added \"${DOMAIN}\" to user \"${DOMAIN_OWNER}\" \033[0m"
@@ -512,6 +525,7 @@ add)
     echo -e "\033[35;1mAWStats is DISABLED by default. URL = http://$DOMAIN/stats.\033[0m"
     echo -e "\033[35;1mStats update daily. Allow 24H before viewing stats or you will be greeted with an error page. \033[0m"
     echo -e "\033[35;1mIf Varnish cache is enabled, please disable & enable it again to reconfigure this domain. \033[0m"
+    echo -e "\033[35;1mSuccesfully added DB to user \"${DOMAIN_OWNER}\" with username \"$DB_USER\" and password \"$DB_PASSWORD\" \033[0m"
     ;;
 rem)
     # Add domain for user
@@ -542,6 +556,7 @@ rem)
     fi
 
     remove_domain
+    remove_database
     ;;
 dbgui)
     if [ "$2" = "on" ]; then
